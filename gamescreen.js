@@ -10,7 +10,7 @@ function GameScreen(inStream, outStream) {
     this.cursor = { rows: 0, cols: 0};
     this.inStream = inStream || process.stdin;
     this.outStream = outStream || process.stdout;
-    
+
     this.inStream.setRawMode(true)
     readline.emitKeypressEvents(this.inStream);
 }
@@ -43,6 +43,24 @@ GameScreen.prototype.cursorTo = function(x,y) {
 
 GameScreen.prototype.getCursorPos = function(){
   return this.cursor;
+}
+
+GameScreen.prototype.drawBorders = function (columns, rows){
+  for (let index = 0; index < columns; index++) {
+    this.write("-"); 
+  }
+  this.write("\n");
+  for (let index = 0; index < rows; index++) {
+    this.write("|"); 
+    for (let j = 0; j < (columns - 2); j++) {
+      this.write(" "); 
+    }
+    this.write("|");
+    this.write("\n");
+  }
+  for (let index = 0; index < columns; index++) {
+    this.write("-"); 
+  }
 }
 
 module.exports = GameScreen;

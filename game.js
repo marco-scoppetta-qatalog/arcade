@@ -1,46 +1,55 @@
 const util = require('util');
 const GameScreen = require('./gamescreen');
+const Ship = require('./ship');
 const exec = util.promisify(require('child_process').exec);
+
+
 const ROWS = 20;
 const COLUMNS = 40;
+let runGame = true;
+const gameScreen = new GameScreen();
+const inputs = [];
+process.stdin.on('keypress',  (str, key) => {inputs.push(key);})
 
-function moveShip(x, y){
-  gameScreen.moveCursor(-1, 0)
-  gameScreen.write(" "); 
-  gameScreen.moveCursor(x, y)
-  gameScreen.write("|");
+
+async function enableTerminalCursor(){
+  const { stdout } = await exec("tput cnorm");
+  console.log(stdout);
 }
 
-async function handleInputs(){
+async function disableTerminalCursor(){
+  const { stdout } = await exec("tput civis");
+  console.log(stdout);
+}
+
+async function handleInputs(ship){
   while(inputs.length){
     const key = inputs.pop();
     const pos = gameScreen.getCursorPos();
     if(key.name === 'right'){
       if(pos.cols < (COLUMNS - 2)){
-        moveShip(1, 0)
+        ship.moveRight();
       }
     }
     if(key.name === 'left'){
       if(pos.cols > 3){
-       moveShip(-3, 0)
+        ship.moveLeft();
       }
     }
     if(key.name === 'up'){
       if(pos.rows > 1){
-        moveShip(-1, -1);
+        ship.moveUp();
       }
     }
     if(key.name === 'down'){
       if(pos.rows < (ROWS)){
-        moveShip(-1, 1);
+        ship.moveDown();
       }
     }
     if (key.ctrl && key.name === 'c') {
       gameScreen.cursorTo(0, ROWS+1);
       gameScreen.write("\n");
       gameScreen.write("Bye!")
-      const { stdout } = await exec("tput cnorm");
-      console.log(stdout);
       runGame = false;
     }
   }
@@ -49,44 +58,24 @@ async function handleInputs(){
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-function drawBorders(){
-  for (let index = 0; index < COLUMNS; index++) {
-    gameScreen.write("-"); 
-  }
-  gameScreen.write("\n");
-  for (let index = 0; index < ROWS; index++) {
-    gameScreen.write("|"); 
-    for (let j = 0; j < (COLUMNS - 2); j++) {
-      gameScreen.write(" "); 
-    }
-    gameScreen.write("|");
-    gameScreen.write("\n");
-  }
-  for (let index = 0; index < COLUMNS; index++) {
-    gameScreen.write("-"); 
-  }
-  gameScreen.moveCursor(-(COLUMNS/2), -2);
-  gameScreen.write("|"); 
-}
-
-
-let runGame = true;
-const gameScreen = new GameScreen();
-const inputs = [];
-process.stdin.on('keypress',  (str, key) => {inputs.push(key);})
 
 async function startGame(){
   try {
-    const { stdout } = await exec("tput civis");
-    console.log(stdout);
-    drawBorders()
+    await disableTerminalCursor();
+    gameScreen.drawBorders(COLUMNS, ROWS);
+
+    const ship = new Ship((COLUMNS/2), ROWS-1, gameScreen)
+
     while(runGame){
-      await handleInputs();
+      await handleInputs(ship);
       await sleep(10)
     }
+
+    await enableTerminalCursor();
     process.exit(0);
   } catch(err) {
     console.error(err);
+    await enableTerminalCursor();
     process.exit(1);
   }
 }
