@@ -17,16 +17,23 @@ function Ship(x, y, screen){
 }
 
 Ship.prototype.moveRight = function(){
+    this.pos.x += 2;
     moveShip(this.screen, 1, 0);
 }
 Ship.prototype.moveLeft = function(){
+    this.pos.x -= 2;
     moveShip(this.screen, -3, 0);
 }
 Ship.prototype.moveUp = function(){
+    this.pos.y -= 1;
     moveShip(this.screen, -1, -1);
 }
 Ship.prototype.moveDown = function(){
+    this.pos.y += 1;
     moveShip(this.screen, -1, 1);
+}
+Ship.prototype.getPos = function(){
+    return this.pos;
 }
 
 module.exports = Ship;
