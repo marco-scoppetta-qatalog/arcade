@@ -1,6 +1,7 @@
 const util = require('util');
 const GameScreen = require('./gamescreen');
 const Ship = require('./ship');
+const Enemy = require('./enemy');
 const exec = util.promisify(require('child_process').exec);
 
 
@@ -21,7 +22,7 @@ async function disableTerminalCursor(){
   console.log(stdout);
 }
 
-async function handleInputs(screen, ship){
+function handleInputs(screen, ship, bullets){
   while(inputs.length){
     const key = inputs.pop();
     const pos = ship.getPos();
@@ -51,12 +52,51 @@ async function handleInputs(screen, ship){
       screen.write("Bye!")
       runGame = false;
     }
+    if(key.name === 'space'){
+      bullets.push(ship.shoot());
+    }
   }
+}
+
+
+function updateBullets(bullets){
+  bullets.forEach((b, i ) => {
+    const deleteBullet = b.moveUp();
+    if(deleteBullet){
+      bullets.splice(i, 1);
+    }  
+  })
+}
+
+let TICK = 1;
+let POINTS = 0;
+function update(bullets, enemy){
+  TICK++;
+  if(TICK%2===0){
+   updateBullets(bullets);
+   if(!enemy.isDestroyed()){
+    const ePos = enemy.getPosAsString();
+    bullets.forEach(b =>{
+      if(ePos === b.getPosAsString()){
+        POINTS++;
+        enemy.destroy();
+      }
+    })
+   }
+  }
+}
+
+function render(screen){
+  drawPoints(screen);
 }
 
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+function drawPoints(s){
+  s.cursorTo(COLUMNS+1, 0);
+  s.write(POINTS.toString());
+}
 
 async function startGame(){
   try {
@@ -64,11 +104,15 @@ async function startGame(){
 
     const gameScreen = new GameScreen();
     gameScreen.drawBorders(COLUMNS, ROWS);
-
-    const ship = new Ship((COLUMNS/2), ROWS-1, gameScreen)
+    drawPoints(gameScreen);
+    const ship = new Ship((COLUMNS/2), ROWS-1, gameScreen);
+    const enemy = new Enemy((COLUMNS/2), 1, gameScreen);
+    const bullets = [];
 
     while(runGame){
-      await handleInputs(gameScreen, ship);
+      handleInputs(gameScreen, ship, bullets);
+      update(bullets, enemy);
+      render(gameScreen);
       await sleep(10)
     }
 
