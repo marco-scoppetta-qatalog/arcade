@@ -9,6 +9,12 @@ const ROWS = 20;
 const COLUMNS = 40;
 let runGame = true;
 const inputs = [];
+
+const readline = require('readline');
+if (process.stdin.isTTY) {
+  process.stdin.setRawMode(true);
+}
+readline.emitKeypressEvents(process.stdin);
 process.stdin.on('keypress',  (str, key) => {inputs.push(key);})
 
 
@@ -68,21 +74,30 @@ function updateBullets(bullets){
   })
 }
 
+function updateEnemies(enemies){
+
+}
+
+function computeCollisions(bullets, enemies){
+  const collisions = {};
+  const bulletPos = bullets.map((b, i) => ({[b.getPosAsString()]: i}));
+  // const ePos = enemy.getPosAsString();
+  // bullets.forEach(b =>{
+  //   if(ePos === b.getPosAsString()){
+  //     POINTS++;
+  //     enemy.destroy();
+  //   }
+  // })
+}
+
 let TICK = 1;
 let POINTS = 0;
-function update(bullets, enemy){
+function update(bullets, enemies){
   TICK++;
   if(TICK%2===0){
    updateBullets(bullets);
-   if(!enemy.isDestroyed()){
-    const ePos = enemy.getPosAsString();
-    bullets.forEach(b =>{
-      if(ePos === b.getPosAsString()){
-        POINTS++;
-        enemy.destroy();
-      }
-    })
-   }
+   updateEnemies(enemies);
+   const collsion = computeCollisions(bullets, enemies);
   }
 }
 
@@ -102,16 +117,16 @@ async function startGame(){
   try {
     await disableTerminalCursor();
 
-    const gameScreen = new GameScreen();
+    const gameScreen = new GameScreen(COLUMNS, ROWS);
     gameScreen.drawBorders(COLUMNS, ROWS);
     drawPoints(gameScreen);
     const ship = new Ship((COLUMNS/2), ROWS-1, gameScreen);
-    const enemy = new Enemy((COLUMNS/2), 1, gameScreen);
+    const enemies = [new Enemy((COLUMNS/2), 1, gameScreen), new Enemy((COLUMNS/2), 2, gameScreen)]
     const bullets = [];
 
     while(runGame){
       handleInputs(gameScreen, ship, bullets);
-      update(bullets, enemy);
+      update(bullets, enemies);
       render(gameScreen);
       await sleep(10)
     }

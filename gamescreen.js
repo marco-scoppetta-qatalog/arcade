@@ -1,18 +1,24 @@
 
-const readline = require('readline');
+/**
+ * GameScreen
+ * 
+ * The origin (0,0) is the top-left corner.
+ * 
+ *  0 1 2 3
+ * 0
+ * 1    
+ * 2    x
+ */
 
 /**
- * 
- * @param {TTY Stream} inStream 
+ * @param columns width of game screen
+ * @param rows height of game screen
  * @param {TTY Stream} outStream 
  */
-function GameScreen(inStream, outStream) {
+function GameScreen(columns, rows, outStream) {
     this.cursor = { rows: 0, cols: 0};
-    this.inStream = inStream || process.stdin;
+    this.size = { columns, rows }
     this.outStream = outStream || process.stdout;
-
-    this.inStream.setRawMode(true)
-    readline.emitKeypressEvents(this.inStream);
 }
 
 GameScreen.prototype.write = function(text) {
@@ -45,22 +51,26 @@ GameScreen.prototype.getCursorPos = function(){
   return this.cursor;
 }
 
-GameScreen.prototype.drawBorders = function (columns, rows){
-  for (let index = 0; index < columns; index++) {
+GameScreen.prototype.drawBorders = function (){
+  for (let index = 0; index < this.size.columns; index++) {
     this.write("-"); 
   }
   this.write("\n");
-  for (let index = 0; index < rows; index++) {
+  for (let index = 0; index < this.size.rows; index++) {
     this.write("|"); 
-    for (let j = 0; j < (columns - 2); j++) {
+    for (let j = 0; j < (this.size.columns - 2); j++) {
       this.write(" "); 
     }
     this.write("|");
     this.write("\n");
   }
-  for (let index = 0; index < columns; index++) {
+  for (let index = 0; index < this.size.columns; index++) {
     this.write("-"); 
   }
+}
+
+GameScreen.prototype.getSize = function(){
+  return this.size;
 }
 
 module.exports = GameScreen;
